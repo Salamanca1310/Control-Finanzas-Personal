@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f7f61">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="JC Finanzas">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./icons/icon-180.png">
+  <link rel="icon" href="./icons/icon-192.png">
+  <link rel="stylesheet" href="./styles.css">
+  <title>JC Finanzas Pro</title>
+</head>
+<body>
+  <div id="lockScreen" class="lock-screen hidden">
+    <div class="lock-card">
+      <div class="lock-logo">JC</div>
+      <h1>JC Finanzas Pro</h1>
+      <p id="lockSubtitle">Ingresa tu PIN para continuar</p>
+      <div id="pinDots" class="pin-dots"><span></span><span></span><span></span><span></span></div>
+      <input id="pinInput" class="pin-input" inputmode="numeric" maxlength="4" autocomplete="one-time-code" aria-label="PIN">
+      <div class="lock-actions">
+        <button id="unlockPinBtn" class="btn primary">Desbloquear</button>
+        <button id="unlockBioBtn" class="btn secondary hidden">Face ID / Touch ID</button>
+      </div>
+      <button id="forgotPinBtn" class="text-btn">Olvidé el PIN</button>
+      <p class="tiny">El bloqueo biométrico usa WebAuthn del dispositivo. Para iPhone requiere HTTPS o una app instalada como PWA.</p>
+    </div>
+  </div>
+
+  <header class="topbar">
+    <div class="top-left">
+      <button id="menuBtn" class="icon-btn" aria-label="Abrir menú">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+      <div class="brand">
+        <div class="brand-mark">JC</div>
+        <div><strong>Finanzas Pro</strong><small id="headerDate"></small></div>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button id="privacyBtn" class="icon-btn" aria-label="Ocultar o mostrar importes"></button>
+      <button id="themeBtn" class="icon-btn" aria-label="Cambiar tema"></button>
+      <button id="alertsBtn" class="icon-btn badge-wrap" aria-label="Alertas">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
+        <span id="alertBadge" class="badge-dot hidden">0</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="page">
+    <!-- DASHBOARD -->
+    <section class="view active" data-view="dashboard">
+      <section class="hero">
+        <div class="hero-row">
+          <div>
+            <div class="eyebrow">Patrimonio neto</div>
+            <div id="netWorthHero" class="hero-balance">$0.00</div>
+            <div class="hero-pills">
+              <span class="pill">Balance cuentas <b id="heroAccounts">$0.00</b></span>
+              <span class="pill">Ahorro <b id="heroSavingsRate">0%</b></span>
+            </div>
+          </div>
+          <div class="hero-avatar"></div>
+        </div>
+        <div class="quick-grid">
+          <button data-open="transaction" data-type="income"><span class="quick-icon">↗</span><small>Ingreso</small></button>
+          <button data-open="transaction" data-type="expense"><span class="quick-icon">↘</span><small>Gasto</small></button>
+          <button data-open="transfer"><span class="quick-icon">⇄</span><small>Transferir</small></button>
+          <button data-nav="calendar"><span class="quick-icon">◫</span><small>Calendario</small></button>
+          <button id="quickBackup"><span class="quick-icon">⇩</span><small>Respaldo</small></button>
+        </div>
+      </section>
+
+      <div class="section-title">
+        <div><h2>Resumen financiero</h2><p>Vista consolidada de tus finanzas personales</p></div>
+      </div>
+
+      <div class="kpi-grid">
+        <article class="card kpi"><div class="kpi-icon success">↗</div><span>Ingresos del mes</span><strong id="kpiIncome">$0.00</strong><small id="kpiIncomeDelta">Mes actual</small></article>
+        <article class="card kpi"><div class="kpi-icon danger">↘</div><span>Gastos del mes</span><strong id="kpiExpense">$0.00</strong><small id="kpiExpenseDelta">Mes actual</small></article>
+        <article class="card kpi"><div class="kpi-icon warning">◎</div><span>Deudas + tarjetas</span><strong id="kpiDebt">$0.00</strong><small>Saldo pendiente</small></article>
+        <article class="card kpi"><div class="kpi-icon info">◈</div><span>Activos</span><strong id="kpiAssets">$0.00</strong><small>Valor estimado</small></article>
+      </div>
+
+      <div class="grid-main">
+        <article class="card">
+          <div class="card-head">
+            <div><h3>Flujo anual</h3><p>Ingresos y gastos por mes</p></div>
+            <select id="dashYear" class="select compact"></select>
+          </div>
+          <div class="chart-box"><canvas id="dashboardChart"></canvas></div>
+        </article>
+        <article class="card">
+          <div class="card-head"><div><h3>Presupuesto</h3><p>Uso por categoría</p></div><button class="text-btn" data-nav="budgets">Gestionar</button></div>
+          <div id="budgetPreview"></div>
+        </article>
+      </div>
+
+      <div class="grid-two">
+        <article class="card">
+          <div class="card-head"><div><h3>Movimientos recientes</h3><p>Última actividad</p></div><button class="text-btn" data-nav="transactions">Ver todos</button></div>
+          <div id="recentTransactions" class="list"></div>
+        </article>
+        <article class="card">
+          <div class="card-head"><div><h3>Próximos pagos</h3><p>Compromisos y vencimientos</p></div><button class="text-btn" data-nav="calendar">Calendario</button></div>
+          <div id="upcomingPayments" class="list"></div>
+        </article>
+      </div>
+    </section>
+
+    <!-- TRANSACTIONS -->
+    <section class="view" data-view="transactions">
+      <div class="section-title">
+        <div><h2>Movimientos</h2><p>Ingresos y gastos registrados</p></div>
+        <button class="btn primary" data-open="transaction" data-type="expense">+ Nuevo</button>
+      </div>
+      <article class="card">
+        <div class="toolbar">
+          <input id="txSearch" class="input grow" placeholder="Buscar descripción o categoría">
+          <select id="txTypeFilter" class="select"><option value="">Todos los tipos</option><option value="income">Ingresos</option><option value="expense">Gastos</option></select>
+          <select id="txAccountFilter" class="select"><option value="">Todas las cuentas</option></select>
+          <button id="exportCsvBtn" class="btn secondary">CSV</button>
+        </div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Categoría</th><th>Cuenta</th><th>Monto</th><th></th></tr></thead>
+            <tbody id="transactionsTable"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <!-- ACCOUNTS -->
+    <section class="view" data-view="accounts">
+      <div class="section-title"><div><h2>Cuentas</h2><p>Bancos, efectivo y ahorro</p></div><button id="newAccountBtn" class="btn primary">+ Cuenta</button></div>
+      <div class="mini-stats">
+        <div class="stat"><small>Saldo consolidado</small><strong id="accountTotal">$0.00</strong></div>
+        <div class="stat"><small>Cuentas activas</small><strong id="accountCount">0</strong></div>
+        <div class="stat"><small>Mayor saldo</small><strong id="largestAccount">—</strong></div>
+      </div>
+      <article class="card"><div id="accountsList" class="list"></div></article>
+    </section>
+
+    <!-- BUDGETS -->
+    <section class="view" data-view="budgets">
+      <div class="section-title"><div><h2>Presupuestos</h2><p>Límites mensuales por categoría</p></div><button id="newBudgetBtn" class="btn primary">+ Presupuesto</button></div>
+      <article class="card"><div id="budgetsList"></div></article>
+    </section>
+
+    <!-- CREDIT CARDS -->
+    <section class="view" data-view="cards">
+      <div class="section-title"><div><h2>Tarjetas de crédito</h2><p>Límite, saldo, corte y fecha de pago</p></div><button id="newCardBtn" class="btn primary">+ Tarjeta</button></div>
+      <div id="creditCardsGrid" class="cards-grid"></div>
+    </section>
+
+    <!-- DEBTS -->
+    <section class="view" data-view="debts">
+      <div class="section-title"><div><h2>Préstamos y deudas</h2><p>Control de saldos, cuotas e intereses</p></div><button id="newDebtBtn" class="btn primary">+ Deuda</button></div>
+      <div class="mini-stats">
+        <div class="stat"><small>Saldo total</small><strong id="debtTotal">$0.00</strong></div>
+        <div class="stat"><small>Cuotas mensuales</small><strong id="debtMonthly">$0.00</strong></div>
+        <div class="stat"><small>Deudas activas</small><strong id="debtCount">0</strong></div>
+      </div>
+      <article class="card"><div id="debtsList" class="list"></div></article>
+    </section>
+
+    <!-- NET WORTH -->
+    <section class="view" data-view="networth">
+      <div class="section-title"><div><h2>Patrimonio</h2><p>Activos menos obligaciones</p></div><button id="newAssetBtn" class="btn primary">+ Activo</button></div>
+      <div class="kpi-grid">
+        <article class="card kpi"><span>Activos manuales</span><strong id="assetsTotal">$0.00</strong><small>Vehículo, inversiones, etc.</small></article>
+        <article class="card kpi"><span>Cuentas</span><strong id="netAccounts">$0.00</strong><small>Disponibilidades</small></article>
+        <article class="card kpi"><span>Pasivos</span><strong id="netLiabilities">$0.00</strong><small>Deudas + tarjetas</small></article>
+        <article class="card kpi"><span>Patrimonio neto</span><strong id="netWorthTotal">$0.00</strong><small>Estimado</small></article>
+      </div>
+      <div class="grid-two">
+        <article class="card"><div class="card-head"><div><h3>Activos</h3><p>Bienes e inversiones</p></div></div><div id="assetsList" class="list"></div></article>
+        <article class="card"><div class="card-head"><div><h3>Composición</h3><p>Activos y pasivos</p></div></div><div class="chart-box"><canvas id="netWorthChart"></canvas></div></article>
+      </div>
+    </section>
+
+    <!-- CALENDAR -->
+    <section class="view" data-view="calendar">
+      <div class="section-title">
+        <div><h2>Calendario financiero</h2><p>Pagos, tarjetas, deudas y recordatorios</p></div>
+        <button id="newReminderBtn" class="btn primary">+ Recordatorio</button>
+      </div>
+      <article class="card">
+        <div class="calendar-toolbar">
+          <button id="prevMonth" class="icon-btn">‹</button>
+          <h3 id="calendarTitle">Mes</h3>
+          <button id="nextMonth" class="icon-btn">›</button>
+        </div>
+        <div class="calendar weekdays"><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div><div>Dom</div></div>
+        <div id="calendarGrid" class="calendar"></div>
+      </article>
+      <article class="card" style="margin-top:14px"><div class="card-head"><div><h3>Eventos del mes</h3><p>Detalle de vencimientos</p></div></div><div id="calendarEvents" class="list"></div></article>
+    </section>
+
+    <!-- CHARTS -->
+    <section class="view" data-view="charts">
+      <div class="section-title"><div><h2>Gráficos anuales</h2><p>Análisis por año y categoría</p></div><select id="chartYear" class="select"></select></div>
+      <div class="grid-two">
+        <article class="card"><div class="card-head"><div><h3>Ingresos vs. gastos</h3><p>12 meses</p></div></div><div class="chart-box"><canvas id="annualChart"></canvas></div></article>
+        <article class="card"><div class="card-head"><div><h3>Gasto por categoría</h3><p>Año seleccionado</p></div></div><div class="chart-box"><canvas id="categoryChart"></canvas></div></article>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="view" data-view="settings">
+      <div class="section-title"><div><h2>Ajustes</h2><p>Perfil, seguridad y respaldo</p></div></div>
+      <div class="grid-two">
+        <article class="card">
+          <h3>Perfil</h3>
+          <div class="form-grid">
+            <label class="field full"><span>Nombre</span><input id="setName" class="input"></label>
+            <label class="field"><span>Moneda</span><select id="setCurrency" class="select"><option value="USD">USD - Dólar</option><option value="EUR">EUR - Euro</option><option value="MXN">MXN - Peso mexicano</option></select></label>
+            <label class="field"><span>Meta de ahorro</span><input id="setSavingsGoal" type="number" min="0" step="0.01" class="input"></label>
+          </div>
+          <button id="saveProfileBtn" class="btn primary wide">Guardar perfil</button>
+        </article>
+        <article class="card">
+          <h3>Seguridad</h3>
+          <div class="setting-row"><div><strong>Bloqueo con PIN</strong><small>PIN local de 4 dígitos</small></div><button id="pinSetupBtn" class="btn secondary">Configurar</button></div>
+          <div class="setting-row"><div><strong>Face ID / Touch ID</strong><small>Usa el autenticador del iPhone</small></div><button id="bioSetupBtn" class="btn secondary">Activar</button></div>
+          <div class="setting-row"><div><strong>Bloquear al salir</strong><small>Solicitar acceso al volver</small></div><button id="autoLockSwitch" class="switch"><span></span></button></div>
+          <div class="setting-row"><div><strong>Ocultar importes</strong><small>Modo privacidad</small></div><button id="privacySwitch" class="switch"><span></span></button></div>
+        </article>
+        <article class="card">
+          <h3>Respaldos</h3>
+          <div class="setting-row"><div><strong>Respaldo automático</strong><small>Una copia local diaria; conserva las últimas 10</small></div><button id="autoBackupSwitch" class="switch"><span></span></button></div>
+          <div class="setting-row"><div><strong>Último respaldo</strong><small id="lastBackupLabel">Sin respaldos</small></div><button id="backupNowBtn" class="btn secondary">Crear</button></div>
+          <div class="toolbar">
+            <button id="downloadBackupBtn" class="btn secondary">Descargar JSON</button>
+            <button id="restoreBackupBtn" class="btn secondary">Importar JSON</button>
+            <button id="restoreSnapshotBtn" class="btn secondary">Restaurar copia local</button>
+          </div>
+        </article>
+        <article class="card">
+          <h3>Sistema</h3>
+          <div class="setting-row"><div><strong>Modo oscuro</strong><small>Apariencia de la aplicación</small></div><button id="themeSwitch" class="switch"><span></span></button></div>
+          <div class="setting-row"><div><strong>Instalar como app</strong><small>En iPhone: Safari → Compartir → Añadir a pantalla de inicio</small></div><button id="installHelpBtn" class="btn secondary">Ver pasos</button></div>
+          <button id="resetBtn" class="btn danger wide">Restablecer datos de demostración</button>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <button id="fab" class="fab" aria-label="Agregar gasto">+</button>
+
+  <nav class="bottom-nav">
+    <button class="active" data-nav="dashboard"><span>⌂</span><small>Inicio</small></button>
+    <button data-nav="transactions"><span>≡</span><small>Movimientos</small></button>
+    <button data-nav="accounts"><span>▣</span><small>Cuentas</small></button>
+    <button data-nav="calendar"><span>◫</span><small>Calendario</small></button>
+    <button data-nav="settings"><span>⚙</span><small>Ajustes</small></button>
+  </nav>
+
+  <div id="overlay" class="overlay"></div>
+
+  <aside id="drawer" class="drawer">
+    <div class="drawer-profile">
+      <div class="hero-avatar"></div>
+      <div><strong id="drawerName">J. Carlos</strong><span>Patrimonio: <b id="drawerNetWorth">$0.00</b></span></div>
+    </div>
+    <div class="drawer-menu">
+      <button data-nav="dashboard" class="active">⌂ <span>Inicio</span></button>
+      <button data-nav="transactions">≡ <span>Movimientos</span></button>
+      <button data-nav="accounts">▣ <span>Cuentas</span></button>
+      <button data-nav="budgets">◎ <span>Presupuestos</span></button>
+      <button data-nav="cards">▤ <span>Tarjetas de crédito</span></button>
+      <button data-nav="debts">◒ <span>Préstamos y deudas</span></button>
+      <button data-nav="networth">◇ <span>Patrimonio</span></button>
+      <button data-nav="calendar">◫ <span>Calendario</span></button>
+      <button data-nav="charts">▥ <span>Gráficos anuales</span></button>
+      <button data-nav="settings">⚙ <span>Ajustes</span></button>
+      <hr>
+      <button id="drawerBackup">⇩ <span>Descargar respaldo</span></button>
+      <button id="drawerLock">⌾ <span>Bloquear ahora</span></button>
+    </div>
+  </aside>
+
+  <!-- GENERIC MODAL -->
+  <section id="modal" class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-head"><h3 id="modalTitle">Nuevo</h3><button id="modalClose" class="icon-btn">×</button></div>
+    <div id="modalBody"></div>
+  </section>
+
+  <input id="restoreFile" type="file" accept=".json" class="hidden">
+  <div id="toast" class="toast"></div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
