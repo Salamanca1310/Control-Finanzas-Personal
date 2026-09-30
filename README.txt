@@ -39,3 +39,5 @@ NOVEDADES v1.2
 - Se pueden crear cuentas directamente mientras se registra un ingreso o gasto.
 - Se pueden administrar y renombrar cuentas desde el mismo formulario.
 - El Service Worker se actualizó a v1.2.0 para forzar la actualización en GitHub Pages/PWA.
+
+Versión 1.2
