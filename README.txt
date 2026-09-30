@@ -39,3 +39,18 @@ NOVEDADES v1.2
 - Se pueden crear cuentas directamente mientras se registra un ingreso o gasto.
 - Se pueden administrar y renombrar cuentas desde el mismo formulario.
 - El Service Worker se actualizó a v1.2.0 para forzar la actualización en GitHub Pages/PWA.
+
+
+NOVEDADES v1.3
+- Los cuadros de categorías se hicieron más pequeños y compactos.
+- Ahora se muestran todas las categorías directamente en el formulario de movimientos.
+- Service Worker actualizado a v1.3.0 para refrescar la PWA en GitHub Pages.
+
+
+NOVEDADES v1.4
+- Todas las categorías se renderizan siempre en Registrar movimiento.
+- La categoría recién creada pasa a ser la primera y queda seleccionada automáticamente.
+- La categoría seleccionada siempre se mantiene visible.
+- Cuadros más compactos: 6 columnas en escritorio, 4 en móvil y 3 en pantallas muy estrechas.
+- Se agregó cache-busting a app.js y styles.css.
+- Service Worker v1.4 usa estrategia network-first para evitar que GitHub Pages/PWA muestre versiones antiguas.

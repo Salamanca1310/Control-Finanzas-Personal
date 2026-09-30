@@ -548,7 +548,7 @@ function openTransaction(type="expense",id=null){
     </div>`);
 
   let recurringEnabled=!!oldRecurringId;
-  let showAllCategories=false;
+  let showAllCategories=true;
   const preferredExpense=["Alimentación","Transporte","Vivienda","Servicios","Educación","Salud","Entretenimiento","Deudas","Ahorro","Otros"];
   const preferredIncome=["Salario","Otros","Ahorro"];
 
@@ -559,7 +559,11 @@ function openTransaction(type="expense",id=null){
   function categoryList(){
     const preferred=kind==="income"?preferredIncome:preferredExpense;
     const ordered=[...preferred.filter(x=>data.categories.includes(x)),...data.categories.filter(x=>!preferred.includes(x))];
-    return showAllCategories?ordered:ordered.slice(0,kind==="income"?6:8);
+    const unique=[...new Set(ordered)];
+    // La categoría seleccionada (incluyendo una recién creada) siempre aparece primero.
+    return selectedCategory && unique.includes(selectedCategory)
+      ? [selectedCategory,...unique.filter(x=>x!==selectedCategory)]
+      : unique;
   }
 
   function refreshHiddenCategorySelect(){
@@ -586,6 +590,10 @@ function openTransaction(type="expense",id=null){
       updatePreview();
     });
     $("#txDescIcon").innerHTML=txCategoryIcon(selectedCategory);
+    requestAnimationFrame(()=>{
+      const active=box.querySelector(".tx-category-chip.active");
+      if(active) active.scrollIntoView({block:"nearest",inline:"nearest",behavior:"smooth"});
+    });
   }
 
   function renderCategoryManager(){
@@ -767,7 +775,7 @@ function openTransaction(type="expense",id=null){
     const name=$("#txNewCategoryName").value.trim();
     if(!name)return toast("Escribe el nombre de la categoría");
     if(data.categories.some(x=>x.toLowerCase()===name.toLowerCase()))return toast("Esa categoría ya existe");
-    data.categories.push(name);selectedCategory=name;showAllCategories=true;
+    data.categories.unshift(name);selectedCategory=name;showAllCategories=true;
     $("#txNewCategoryName").value="";$("#txCategoryCreator").classList.add("hidden");
     persist();renderCategoryChips();renderCategoryManager();updatePreview();toast("Categoría creada y seleccionada");
   };
