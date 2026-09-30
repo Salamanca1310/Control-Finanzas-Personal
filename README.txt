@@ -29,3 +29,13 @@ La integración de WebAuthn de esta PWA es un bloqueo local de conveniencia. Un 
 VERSIÓN 1.1
 - Nuevo formulario PRO para ingresos y gastos.
 - Monto grande, categorías visuales, saldo proyectado, aviso de presupuesto, fechas rápidas, notas, pagos habituales y guardar/registrar otro.
+
+
+NOVEDADES v1.2
+- El registro de movimientos ahora permite crear categorías sin salir del formulario.
+- Las categorías se pueden administrar, renombrar y eliminar si no están en uso.
+- La cuenta se selecciona mediante tarjetas visuales, no solo con un selector desplegable.
+- Se muestra el saldo actual y el saldo proyectado de cada cuenta.
+- Se pueden crear cuentas directamente mientras se registra un ingreso o gasto.
+- Se pueden administrar y renombrar cuentas desde el mismo formulario.
+- El Service Worker se actualizó a v1.2.0 para forzar la actualización en GitHub Pages/PWA.

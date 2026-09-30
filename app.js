@@ -434,32 +434,98 @@ function openTransaction(type="expense",id=null){
   const t=id?data.transactions.find(x=>x.id===id):null;
   let kind=t?.type||type;
   let selectedCategory=t?.category || (kind==="income" ? (data.categories.includes("Salario")?"Salario":data.categories[0]) : (data.categories.includes("Alimentación")?"Alimentación":data.categories[0]));
-  const initialAccount=t?.account||data.accounts[0]?.id||"";
+  let selectedAccount=t?.account||data.accounts[0]?.id||"";
   const oldRecurringId=t?.recurringId||"";
 
   modal(id?"Editar movimiento":"Registrar movimiento",`
     <div class="transaction-editor ${kind}">
       <div class="tx-kind-switch" role="tablist" aria-label="Tipo de movimiento">
-        <button id="segExpense" type="button" class="tx-kind expense ${kind==="expense"?"active":""}"><span>↘</span><div><b>Gasto</b><small>Dinero que sale</small></div></button>
-        <button id="segIncome" type="button" class="tx-kind income ${kind==="income"?"active":""}"><span>↗</span><div><b>Ingreso</b><small>Dinero que entra</small></div></button>
+        <button id="segExpense" type="button" class="tx-kind expense ${kind==="expense"?"active":""}">
+          <span>↘</span><div><b>Gasto</b><small>Dinero que sale</small></div>
+        </button>
+        <button id="segIncome" type="button" class="tx-kind income ${kind==="income"?"active":""}">
+          <span>↗</span><div><b>Ingreso</b><small>Dinero que entra</small></div>
+        </button>
       </div>
 
       <section class="tx-amount-card">
         <span class="tx-amount-label" id="txAmountLabel">${kind==="income"?"Monto del ingreso":"Monto del gasto"}</span>
-        <div class="tx-amount-row"><span class="tx-currency">${escapeHtml(data.profile.currency||"USD")}</span><input id="mAmount" inputmode="decimal" autocomplete="off" type="number" min="0" step="0.01" value="${t?.amount??""}" placeholder="0.00"></div>
-        <div class="tx-quick-amounts"><button type="button" data-add-amount="5">+5</button><button type="button" data-add-amount="10">+10</button><button type="button" data-add-amount="20">+20</button><button type="button" data-add-amount="50">+50</button></div>
+        <div class="tx-amount-row">
+          <span class="tx-currency">${escapeHtml(data.profile.currency||"USD")}</span>
+          <input id="mAmount" inputmode="decimal" autocomplete="off" type="number" min="0" step="0.01" value="${t?.amount??""}" placeholder="0.00">
+        </div>
+        <div class="tx-quick-amounts">
+          <button type="button" data-add-amount="5">+5</button>
+          <button type="button" data-add-amount="10">+10</button>
+          <button type="button" data-add-amount="20">+20</button>
+          <button type="button" data-add-amount="50">+50</button>
+        </div>
       </section>
 
-      <div class="tx-section-head"><div><b>Categoría</b><small>Selecciona para clasificar automáticamente</small></div><button id="txMoreCategories" class="text-btn" type="button">Ver todas</button></div>
-      <div id="txCategoryChips" class="tx-category-grid"></div>
-      <select id="mCategory" class="select hidden" aria-label="Categoría">${categoryOptions(selectedCategory)}</select>
+      <section class="tx-block">
+        <div class="tx-section-head">
+          <div><b>Categoría</b><small>Selecciona, crea o administra categorías sin salir del movimiento</small></div>
+          <div class="tx-head-actions">
+            <button id="txManageCategories" class="text-btn" type="button">Administrar</button>
+            <button id="txAddCategory" class="mini-action primary-lite" type="button">+ Nueva</button>
+          </div>
+        </div>
+        <div id="txCategoryChips" class="tx-category-grid"></div>
+        <select id="mCategory" class="select hidden" aria-label="Categoría">${categoryOptions(selectedCategory)}</select>
+
+        <div id="txCategoryCreator" class="tx-inline-panel hidden">
+          <div class="tx-inline-title"><div><b>Nueva categoría</b><small>Se guardará para futuros movimientos</small></div><button id="txCloseCategoryCreator" class="mini-btn" type="button">×</button></div>
+          <div class="tx-inline-form">
+            <input id="txNewCategoryName" class="input" placeholder="Ej. Mascota, Iglesia, Freelance...">
+            <button id="txSaveNewCategory" class="btn primary" type="button">Agregar</button>
+          </div>
+        </div>
+
+        <div id="txCategoryManager" class="tx-inline-panel hidden">
+          <div class="tx-inline-title"><div><b>Administrar categorías</b><small>Puedes renombrar o eliminar las que no estén en uso</small></div><button id="txCloseCategoryManager" class="mini-btn" type="button">×</button></div>
+          <div id="txCategoryManagerList" class="tx-manager-list"></div>
+        </div>
+      </section>
+
+      <section class="tx-block">
+        <div class="tx-section-head">
+          <div><b>Cuenta</b><small>Elige exactamente de dónde sale o a dónde entra el dinero</small></div>
+          <div class="tx-head-actions">
+            <button id="txManageAccounts" class="text-btn" type="button">Administrar</button>
+            <button id="txAddAccount" class="mini-action primary-lite" type="button">+ Nueva</button>
+          </div>
+        </div>
+
+        <div id="txAccountCards" class="tx-account-grid"></div>
+        <select id="mAccount" class="select hidden">${accountOptions(selectedAccount)}</select>
+        <small id="txAccountBalance" class="field-hint tx-account-hint"></small>
+
+        <div id="txAccountCreator" class="tx-inline-panel hidden">
+          <div class="tx-inline-title"><div><b>Nueva cuenta</b><small>Banco, efectivo o ahorro</small></div><button id="txCloseAccountCreator" class="mini-btn" type="button">×</button></div>
+          <div class="tx-inline-form account-form">
+            <input id="txNewAccountName" class="input" placeholder="Ej. Banco Davivienda">
+            <select id="txNewAccountType" class="select">
+              <option>Banco</option><option>Efectivo</option><option>Ahorro</option>
+            </select>
+            <input id="txNewAccountBalance" type="number" step="0.01" class="input" placeholder="Saldo inicial">
+            <button id="txSaveNewAccount" class="btn primary" type="button">Crear cuenta</button>
+          </div>
+        </div>
+
+        <div id="txAccountManager" class="tx-inline-panel hidden">
+          <div class="tx-inline-title"><div><b>Administrar cuentas</b><small>Edita el nombre, tipo y saldo inicial</small></div><button id="txCloseAccountManager" class="mini-btn" type="button">×</button></div>
+          <div id="txAccountManagerList" class="tx-manager-list"></div>
+        </div>
+      </section>
 
       <div class="tx-two-col">
-        <label class="field"><span>Cuenta</span><select id="mAccount" class="select">${accountOptions(initialAccount)}</select><small id="txAccountBalance" class="field-hint"></small></label>
-        <label class="field"><span>Fecha</span><input id="mDate" type="date" class="input" value="${t?.date||todayISO()}"><div class="date-shortcuts"><button type="button" data-date="today">Hoy</button><button type="button" data-date="yesterday">Ayer</button></div></label>
+        <label class="field"><span>Fecha</span><input id="mDate" type="date" class="input" value="${t?.date||todayISO()}">
+          <div class="date-shortcuts"><button type="button" data-date="today">Hoy</button><button type="button" data-date="yesterday">Ayer</button></div>
+        </label>
+        <label class="field tx-description"><span>Descripción</span>
+          <div class="input-with-icon"><span id="txDescIcon">${txCategoryIcon(selectedCategory)}</span><input id="mDesc" class="input" value="${escapeHtml(t?.desc||"")}" placeholder="Ej. Supermercado, salario, combustible..."></div>
+        </label>
       </div>
-
-      <label class="field tx-description"><span>Descripción</span><div class="input-with-icon"><span>${txCategoryIcon(selectedCategory)}</span><input id="mDesc" class="input" value="${escapeHtml(t?.desc||"")}" placeholder="Ej. Supermercado, salario, combustible..."></div></label>
 
       <div id="txSmartSummary" class="tx-smart-summary"></div>
       <div id="txBudgetNotice" class="tx-budget-notice hidden"></div>
@@ -486,36 +552,159 @@ function openTransaction(type="expense",id=null){
   const preferredExpense=["Alimentación","Transporte","Vivienda","Servicios","Educación","Salud","Entretenimiento","Deudas","Ahorro","Otros"];
   const preferredIncome=["Salario","Otros","Ahorro"];
 
+  const closeInlinePanels=()=>{
+    ["txCategoryCreator","txCategoryManager","txAccountCreator","txAccountManager"].forEach(x=>$("#"+x)?.classList.add("hidden"));
+  };
+
   function categoryList(){
     const preferred=kind==="income"?preferredIncome:preferredExpense;
     const ordered=[...preferred.filter(x=>data.categories.includes(x)),...data.categories.filter(x=>!preferred.includes(x))];
-    return showAllCategories?ordered:ordered.slice(0,kind==="income"?5:8);
+    return showAllCategories?ordered:ordered.slice(0,kind==="income"?6:8);
   }
+
+  function refreshHiddenCategorySelect(){
+    const sel=$("#mCategory");
+    sel.innerHTML=categoryOptions(selectedCategory);
+    sel.value=selectedCategory;
+  }
+
   function renderCategoryChips(){
+    if(!data.categories.length){
+      selectedCategory="";
+      $("#txCategoryChips").innerHTML=`<button id="txEmptyCategoryAdd" type="button" class="tx-empty-action">+ Crear primera categoría</button>`;
+      $("#txEmptyCategoryAdd").onclick=()=>{$("#txCategoryCreator").classList.remove("hidden");$("#txNewCategoryName").focus()};
+      return;
+    }
+    if(!data.categories.includes(selectedCategory)) selectedCategory=data.categories[0];
+    refreshHiddenCategorySelect();
     const box=$("#txCategoryChips");
     box.innerHTML=categoryList().map(c=>`<button type="button" class="tx-category-chip ${c===selectedCategory?"active":""}" data-category="${escapeHtml(c)}"><span>${txCategoryIcon(c)}</span><b>${escapeHtml(c)}</b></button>`).join("");
-    box.querySelectorAll("[data-category]").forEach(btn=>btn.onclick=()=>{selectedCategory=btn.dataset.category;$("#mCategory").value=selectedCategory;renderCategoryChips();updatePreview()});
-    $("#txMoreCategories").textContent=showAllCategories?"Ver menos":"Ver todas";
+    box.querySelectorAll("[data-category]").forEach(btn=>btn.onclick=()=>{
+      selectedCategory=btn.dataset.category;
+      refreshHiddenCategorySelect();
+      renderCategoryChips();
+      updatePreview();
+    });
+    $("#txDescIcon").innerHTML=txCategoryIcon(selectedCategory);
   }
+
+  function renderCategoryManager(){
+    const list=$("#txCategoryManagerList");
+    list.innerHTML=data.categories.map((c,i)=>{
+      const used=data.transactions.some(x=>x.category===c)||data.budgets.some(x=>x.category===c)||data.recurring.some(x=>x.category===c);
+      return `<div class="tx-manager-row">
+        <div class="tx-manager-icon">${txCategoryIcon(c)}</div>
+        <div class="row-main"><div class="row-title">${escapeHtml(c)}</div><div class="row-sub">${used?"Categoría en uso":"Sin movimientos asociados"}</div></div>
+        <button class="mini-btn" type="button" data-rename-category="${i}">✎</button>
+        <button class="mini-btn" type="button" data-remove-category="${i}" ${used?"disabled":""}>×</button>
+      </div>`;
+    }).join("")||empty("No hay categorías");
+    list.querySelectorAll("[data-rename-category]").forEach(btn=>btn.onclick=()=>{
+      const i=+btn.dataset.renameCategory,old=data.categories[i];
+      const name=prompt("Nuevo nombre de la categoría:",old)?.trim();
+      if(!name||name===old)return;
+      if(data.categories.some((x,idx)=>idx!==i&&x.toLowerCase()===name.toLowerCase()))return toast("Ya existe una categoría con ese nombre");
+      data.categories[i]=name;
+      data.transactions.forEach(x=>{if(x.category===old)x.category=name});
+      data.budgets.forEach(x=>{if(x.category===old)x.category=name});
+      data.recurring.forEach(x=>{if(x.category===old)x.category=name});
+      if(selectedCategory===old)selectedCategory=name;
+      persist();renderCategoryManager();renderCategoryChips();updatePreview();toast("Categoría actualizada");
+    });
+    list.querySelectorAll("[data-remove-category]").forEach(btn=>btn.onclick=()=>{
+      const i=+btn.dataset.removeCategory,c=data.categories[i];
+      if(data.transactions.some(x=>x.category===c)||data.budgets.some(x=>x.category===c)||data.recurring.some(x=>x.category===c))return toast("No se puede eliminar porque la categoría está en uso");
+      if(confirm(`¿Eliminar la categoría "${c}"?`)){
+        data.categories.splice(i,1);
+        if(selectedCategory===c)selectedCategory=data.categories[0]||"";
+        persist();renderCategoryManager();renderCategoryChips();updatePreview();toast("Categoría eliminada");
+      }
+    });
+  }
+
+  function refreshHiddenAccountSelect(){
+    const sel=$("#mAccount");
+    sel.innerHTML=accountOptions(selectedAccount);
+    if(data.accounts.some(a=>a.id===selectedAccount))sel.value=selectedAccount;
+  }
+
+  function renderAccountCards(){
+    if(!data.accounts.length){
+      selectedAccount="";
+      $("#txAccountCards").innerHTML=`<button id="txEmptyAccountAdd" type="button" class="tx-empty-action">+ Crear primera cuenta</button>`;
+      $("#txEmptyAccountAdd").onclick=()=>{$("#txAccountCreator").classList.remove("hidden");$("#txNewAccountName").focus()};
+      $("#txAccountBalance").textContent="";
+      return;
+    }
+    if(!data.accounts.some(a=>a.id===selectedAccount))selectedAccount=data.accounts[0].id;
+    refreshHiddenAccountSelect();
+    $("#txAccountCards").innerHTML=data.accounts.map(a=>{
+      const bal=baseBalanceForPreview(a.id);
+      return `<button type="button" class="tx-account-card ${a.id===selectedAccount?"active":""}" data-account="${a.id}">
+        <span class="tx-account-icon">${a.type==="Efectivo"?"$":a.type==="Ahorro"?"◇":"▣"}</span>
+        <span class="tx-account-copy"><b>${escapeHtml(a.name)}</b><small>${escapeHtml(a.type)} · ${money(bal)}</small></span>
+        <span class="tx-account-check">✓</span>
+      </button>`;
+    }).join("");
+    $("#txAccountCards").querySelectorAll("[data-account]").forEach(btn=>btn.onclick=()=>{
+      selectedAccount=btn.dataset.account;
+      refreshHiddenAccountSelect();
+      renderAccountCards();
+      updatePreview();
+    });
+  }
+
+  function renderAccountManager(){
+    const list=$("#txAccountManagerList");
+    list.innerHTML=data.accounts.map(a=>{
+      const hasUse=data.transactions.some(x=>x.account===a.id)||data.transfers.some(x=>x.from===a.id||x.to===a.id)||data.recurring.some(x=>x.account===a.id);
+      return `<div class="tx-manager-row">
+        <div class="tx-manager-icon">${a.type==="Efectivo"?"$":a.type==="Ahorro"?"◇":"▣"}</div>
+        <div class="row-main"><div class="row-title">${escapeHtml(a.name)}</div><div class="row-sub">${escapeHtml(a.type)} · Saldo ${money(accountBalance(a.id))}</div></div>
+        <button class="mini-btn" type="button" data-edit-inline-account="${a.id}">✎</button>
+        <button class="mini-btn" type="button" data-remove-inline-account="${a.id}" ${hasUse||data.accounts.length<=1?"disabled":""}>×</button>
+      </div>`;
+    }).join("")||empty("No hay cuentas");
+    list.querySelectorAll("[data-edit-inline-account]").forEach(btn=>btn.onclick=()=>{
+      const a=data.accounts.find(x=>x.id===btn.dataset.editInlineAccount);if(!a)return;
+      const name=prompt("Nombre de la cuenta:",a.name)?.trim();
+      if(!name)return;
+      a.name=name;
+      persist();renderAccountManager();renderAccountCards();updatePreview();toast("Cuenta actualizada");
+    });
+    list.querySelectorAll("[data-remove-inline-account]").forEach(btn=>btn.onclick=()=>{
+      const aid=btn.dataset.removeInlineAccount;
+      const hasUse=data.transactions.some(x=>x.account===aid)||data.transfers.some(x=>x.from===aid||x.to===aid)||data.recurring.some(x=>x.account===aid);
+      if(hasUse)return toast("No se puede eliminar porque la cuenta tiene operaciones asociadas");
+      if(data.accounts.length<=1)return toast("Debe existir al menos una cuenta");
+      if(confirm("¿Eliminar esta cuenta?")){
+        data.accounts=data.accounts.filter(x=>x.id!==aid);
+        if(selectedAccount===aid)selectedAccount=data.accounts[0]?.id||"";
+        persist();renderAccountManager();renderAccountCards();updatePreview();toast("Cuenta eliminada");
+      }
+    });
+  }
+
   function baseBalanceForPreview(accountId){
     let bal=accountBalance(accountId);
     if(t && t.account===accountId){bal += t.type==="income" ? -(+t.amount||0) : (+t.amount||0)}
     return bal;
   }
+
   function updatePreview(){
     const amount=+$("#mAmount").value||0;
-    const accountId=$("#mAccount").value;
-    const before=baseBalanceForPreview(accountId);
+    const accountId=selectedAccount||$("#mAccount").value;
+    const before=accountId?baseBalanceForPreview(accountId):0;
     const after=before+(kind==="income"?amount:-amount);
-    const account=accountName(accountId);
+    const account=accountId?accountName(accountId):"Sin cuenta";
     $("#txAmountLabel").textContent=kind==="income"?"Monto del ingreso":"Monto del gasto";
     $("#txSaveAmount").textContent=money(amount);
-    $("#txAccountBalance").textContent=`Saldo actual: ${money(before)} · Después: ${money(after)}`;
+    $("#txAccountBalance").textContent=accountId?`Cuenta seleccionada: ${account} · Saldo actual ${money(before)} · Después ${money(after)}`:"Selecciona o crea una cuenta";
     $("#txSmartSummary").className=`tx-smart-summary ${kind}`;
-    $("#txSmartSummary").innerHTML=`<span class="summary-icon">${kind==="income"?"↗":"↘"}</span><div><b>${kind==="income"?"Ingresará":"Saldrá"} ${money(amount)}</b><small>${escapeHtml(account)} · ${escapeHtml(selectedCategory)} · ${dateFmt($("#mDate").value)}</small></div><strong>${money(after)}</strong>`;
+    $("#txSmartSummary").innerHTML=`<span class="summary-icon">${kind==="income"?"↗":"↘"}</span><div><b>${kind==="income"?"Ingresará":"Saldrá"} ${money(amount)}</b><small>${escapeHtml(account)} · ${escapeHtml(selectedCategory||"Sin categoría")} · ${dateFmt($("#mDate").value)}</small></div><strong>${money(after)}</strong>`;
     const notice=$("#txBudgetNotice");
     notice.classList.add("hidden");
-    if(kind==="expense"){
+    if(kind==="expense"&&selectedCategory){
       const d=$("#mDate").value||todayISO(), ym=d.slice(0,7);
       const b=data.budgets.find(x=>x.category===selectedCategory);
       if(b){
@@ -526,32 +715,41 @@ function openTransaction(type="expense",id=null){
         notice.className=`tx-budget-notice ${remaining<0?"over":pct>=80?"warning":"ok"}`;
         notice.innerHTML=remaining<0?`<b>Presupuesto excedido por ${money(Math.abs(remaining))}</b><span>${escapeHtml(selectedCategory)} alcanzaría ${pct}% del límite mensual.</span>`:`<b>Quedarían ${money(Math.max(0,remaining))}</b><span>${escapeHtml(selectedCategory)} usaría ${pct}% del presupuesto mensual.</span>`;
       }
-      if(amount>before && before>=0){
+      if(accountId&&amount>before&&before>=0){
         notice.classList.remove("hidden");notice.className="tx-budget-notice over";notice.innerHTML=`<b>Saldo insuficiente en ${escapeHtml(account)}</b><span>El gasto supera el saldo disponible por ${money(amount-before)}.</span>`;
       }
     }
     $("#recurringField").classList.toggle("hidden",kind==="income");
     document.querySelector(".transaction-editor")?.classList.toggle("income",kind==="income");
     document.querySelector(".transaction-editor")?.classList.toggle("expense",kind==="expense");
-    $("#segIncome").classList.toggle("active",kind==="income");$("#segExpense").classList.toggle("active",kind==="expense");
+    $("#segIncome").classList.toggle("active",kind==="income");
+    $("#segExpense").classList.toggle("active",kind==="expense");
+    $("#txDescIcon").innerHTML=txCategoryIcon(selectedCategory||"Otros");
   }
+
   function setKind(next){
     kind=next;
-    if(kind==="income" && !preferredIncome.includes(selectedCategory))selectedCategory=data.categories.includes("Salario")?"Salario":"Otros";
-    if(kind==="expense" && selectedCategory==="Salario")selectedCategory=data.categories.includes("Alimentación")?"Alimentación":"Otros";
-    $("#mCategory").value=selectedCategory;
-    renderCategoryChips();updatePreview();
+    if(kind==="income" && !preferredIncome.includes(selectedCategory))selectedCategory=data.categories.includes("Salario")?"Salario":(data.categories.includes("Otros")?"Otros":data.categories[0]||"");
+    if(kind==="expense" && selectedCategory==="Salario")selectedCategory=data.categories.includes("Alimentación")?"Alimentación":(data.categories.includes("Otros")?"Otros":data.categories[0]||"");
+    refreshHiddenCategorySelect();
+    renderCategoryChips();
+    updatePreview();
   }
+
   function saveTransaction(andNew=false){
-    const amount=+$("#mAmount").value,date=$("#mDate").value,account=$("#mAccount").value;
+    const amount=+$("#mAmount").value,date=$("#mDate").value,account=selectedAccount||$("#mAccount").value;
     if(!(amount>0)){$("#mAmount").focus();return toast("Ingresa un monto mayor que cero")}
-    if(!date||!account)return toast("Completa fecha y cuenta");
+    if(!selectedCategory)return toast("Selecciona o crea una categoría");
+    if(!date)return toast("Selecciona la fecha");
+    if(!account)return toast("Selecciona o crea la cuenta del movimiento");
     const desc=$("#mDesc").value.trim()||selectedCategory;
     let recurringId=oldRecurringId;
     if(kind==="expense"&&recurringEnabled){
       if(!recurringId){recurringId=uid();data.recurring.push({id:recurringId,name:desc,day:+date.slice(-2),amount,account,category:selectedCategory})}
       else{const r=data.recurring.find(x=>x.id===recurringId);if(r)Object.assign(r,{name:desc,day:+date.slice(-2),amount,account,category:selectedCategory})}
-    }else if(recurringId){data.recurring=data.recurring.filter(x=>x.id!==recurringId);recurringId=""}
+    }else if(recurringId){
+      data.recurring=data.recurring.filter(x=>x.id!==recurringId);recurringId="";
+    }
     const obj={id:id||uid(),type:kind,amount,date,category:selectedCategory,account,desc,note:$("#mNote").value.trim(),recurringId};
     if(id)Object.assign(data.transactions.find(x=>x.id===id),obj);else data.transactions.push(obj);
     closeLayers();render();toast(id?"Movimiento actualizado":"Movimiento guardado");
@@ -560,20 +758,61 @@ function openTransaction(type="expense",id=null){
 
   $("#segIncome").onclick=()=>setKind("income");
   $("#segExpense").onclick=()=>setKind("expense");
-  $("#txMoreCategories").onclick=()=>{showAllCategories=!showAllCategories;renderCategoryChips()};
+
+  $("#txAddCategory").onclick=()=>{
+    closeInlinePanels();$("#txCategoryCreator").classList.remove("hidden");setTimeout(()=>$("#txNewCategoryName").focus(),60);
+  };
+  $("#txCloseCategoryCreator").onclick=()=>$("#txCategoryCreator").classList.add("hidden");
+  $("#txSaveNewCategory").onclick=()=>{
+    const name=$("#txNewCategoryName").value.trim();
+    if(!name)return toast("Escribe el nombre de la categoría");
+    if(data.categories.some(x=>x.toLowerCase()===name.toLowerCase()))return toast("Esa categoría ya existe");
+    data.categories.push(name);selectedCategory=name;showAllCategories=true;
+    $("#txNewCategoryName").value="";$("#txCategoryCreator").classList.add("hidden");
+    persist();renderCategoryChips();renderCategoryManager();updatePreview();toast("Categoría creada y seleccionada");
+  };
+  $("#txNewCategoryName").addEventListener("keydown",e=>{if(e.key==="Enter")$("#txSaveNewCategory").click()});
+
+  $("#txManageCategories").onclick=()=>{
+    const p=$("#txCategoryManager"),open=p.classList.contains("hidden");
+    closeInlinePanels();if(open){p.classList.remove("hidden");renderCategoryManager()}
+  };
+  $("#txCloseCategoryManager").onclick=()=>$("#txCategoryManager").classList.add("hidden");
+
+  $("#txAddAccount").onclick=()=>{
+    closeInlinePanels();$("#txAccountCreator").classList.remove("hidden");setTimeout(()=>$("#txNewAccountName").focus(),60);
+  };
+  $("#txCloseAccountCreator").onclick=()=>$("#txAccountCreator").classList.add("hidden");
+  $("#txSaveNewAccount").onclick=()=>{
+    const name=$("#txNewAccountName").value.trim();
+    if(!name)return toast("Escribe el nombre de la cuenta");
+    const a={id:uid(),name,type:$("#txNewAccountType").value,openingBalance:+$("#txNewAccountBalance").value||0};
+    data.accounts.push(a);selectedAccount=a.id;
+    $("#txNewAccountName").value="";$("#txNewAccountBalance").value="";$("#txAccountCreator").classList.add("hidden");
+    persist();renderAccountCards();renderAccountManager();updatePreview();toast("Cuenta creada y seleccionada");
+  };
+  $("#txNewAccountName").addEventListener("keydown",e=>{if(e.key==="Enter")$("#txSaveNewAccount").click()});
+
+  $("#txManageAccounts").onclick=()=>{
+    const p=$("#txAccountManager"),open=p.classList.contains("hidden");
+    closeInlinePanels();if(open){p.classList.remove("hidden");renderAccountManager()}
+  };
+  $("#txCloseAccountManager").onclick=()=>$("#txAccountManager").classList.add("hidden");
+
   $("#mAmount").oninput=updatePreview;
-  $("#mAccount").onchange=updatePreview;
   $("#mDate").onchange=updatePreview;
-  $("#mDesc").oninput=()=>{};
   $$('[data-add-amount]').forEach(b=>b.onclick=()=>{$("#mAmount").value=((+$("#mAmount").value||0)+(+b.dataset.addAmount)).toFixed(2);updatePreview()});
   $$('[data-date]').forEach(b=>b.onclick=()=>{const d=new Date();if(b.dataset.date==="yesterday")d.setDate(d.getDate()-1);$("#mDate").value=d.toISOString().slice(0,10);updatePreview()});
   $("#mRecurringSwitch").onclick=()=>{recurringEnabled=!recurringEnabled;$("#mRecurringSwitch").classList.toggle("on",recurringEnabled)};
   $("#mSaveTx").onclick=()=>saveTransaction(false);
   $("#mSaveAndNew").onclick=()=>saveTransaction(true);
 
-  renderCategoryChips();updatePreview();
+  renderCategoryChips();
+  renderAccountCards();
+  updatePreview();
   setTimeout(()=>$("#mAmount")?.focus(),220);
 }
+
 function deleteTransaction(id){if(confirm("¿Eliminar este movimiento?")){data.transactions=data.transactions.filter(x=>x.id!==id);render();toast("Movimiento eliminado")}}
 
 function openAccount(id=null){
