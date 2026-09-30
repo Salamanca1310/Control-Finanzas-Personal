@@ -54,3 +54,11 @@ NOVEDADES v1.4
 - Cuadros más compactos: 6 columnas en escritorio, 4 en móvil y 3 en pantallas muy estrechas.
 - Se agregó cache-busting a app.js y styles.css.
 - Service Worker v1.4 usa estrategia network-first para evitar que GitHub Pages/PWA muestre versiones antiguas.
+
+
+NOVEDADES v1.5
+- Ahora puedes seleccionar una categoría directamente desde "Administrar categorías".
+- Puedes tocar toda la fila o el botón "✓ Usar".
+- La categoría seleccionada queda resaltada.
+- Al seleccionar, se cierra el administrador y la categoría queda activa en el movimiento.
+- Los botones editar/eliminar no cambian accidentalmente la categoría seleccionada.

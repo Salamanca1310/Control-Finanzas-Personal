@@ -109,3 +109,53 @@
 @media(max-width:390px){
   .tx-category-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
 }
+
+
+/* v1.5 — seleccionar categoría directamente desde Administrar */
+.tx-category-manager-row{
+  cursor:pointer;
+  transition:.18s var(--ease);
+}
+.tx-category-manager-row:hover{
+  border-color:color-mix(in srgb,var(--primary) 35%,var(--border));
+  background:color-mix(in srgb,var(--primary3) 45%,var(--surface));
+}
+.tx-category-manager-row.selected{
+  border-color:color-mix(in srgb,var(--primary) 50%,var(--border));
+  background:var(--primary3);
+  box-shadow:0 6px 16px rgba(15,139,104,.08);
+}
+.transaction-editor.expense .tx-category-manager-row.selected{
+  border-color:rgba(225,88,88,.28);
+  background:rgba(225,88,88,.07);
+}
+.tx-use-category{
+  border:1px solid color-mix(in srgb,var(--primary) 30%,var(--border));
+  background:var(--primary3);
+  color:var(--primary);
+  border-radius:11px;
+  padding:8px 10px;
+  font-size:10px;
+  font-weight:900;
+  white-space:nowrap;
+}
+.tx-use-category:hover{transform:translateY(-1px)}
+.tx-use-category.selected{
+  background:var(--primary);
+  color:#fff;
+  border-color:var(--primary);
+}
+.transaction-editor.expense .tx-use-category{
+  background:rgba(225,88,88,.08);
+  color:var(--danger);
+  border-color:rgba(225,88,88,.22);
+}
+.transaction-editor.expense .tx-use-category.selected{
+  background:var(--danger);
+  color:#fff;
+}
+@media(max-width:680px){
+  .tx-manager-row{flex-wrap:wrap}
+  .tx-manager-row .row-main{min-width:150px}
+  .tx-use-category{order:3;flex:1 1 110px}
+}

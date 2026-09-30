@@ -600,14 +600,50 @@ function openTransaction(type="expense",id=null){
     const list=$("#txCategoryManagerList");
     list.innerHTML=data.categories.map((c,i)=>{
       const used=data.transactions.some(x=>x.category===c)||data.budgets.some(x=>x.category===c)||data.recurring.some(x=>x.category===c);
-      return `<div class="tx-manager-row">
+      const selected=c===selectedCategory;
+      return `<div class="tx-manager-row tx-category-manager-row ${selected?"selected":""}" data-select-category="${escapeHtml(c)}" role="button" tabindex="0" aria-label="Seleccionar ${escapeHtml(c)}">
         <div class="tx-manager-icon">${txCategoryIcon(c)}</div>
-        <div class="row-main"><div class="row-title">${escapeHtml(c)}</div><div class="row-sub">${used?"Categoría en uso":"Sin movimientos asociados"}</div></div>
-        <button class="mini-btn" type="button" data-rename-category="${i}">✎</button>
-        <button class="mini-btn" type="button" data-remove-category="${i}" ${used?"disabled":""}>×</button>
+        <div class="row-main">
+          <div class="row-title">${escapeHtml(c)}</div>
+          <div class="row-sub">${selected?"Categoría seleccionada · toca para volver al formulario":used?"Categoría en uso · toca para seleccionar":"Sin movimientos asociados · toca para seleccionar"}</div>
+        </div>
+        <button class="tx-use-category ${selected?"selected":""}" type="button" data-use-category="${escapeHtml(c)}">${selected?"✓ Seleccionada":"✓ Usar"}</button>
+        <button class="mini-btn" type="button" data-rename-category="${i}" aria-label="Editar ${escapeHtml(c)}">✎</button>
+        <button class="mini-btn" type="button" data-remove-category="${i}" ${used?"disabled":""} aria-label="Eliminar ${escapeHtml(c)}">×</button>
       </div>`;
     }).join("")||empty("No hay categorías");
-    list.querySelectorAll("[data-rename-category]").forEach(btn=>btn.onclick=()=>{
+
+    const chooseCategory=(category)=>{
+      if(!data.categories.includes(category))return;
+      selectedCategory=category;
+      refreshHiddenCategorySelect();
+      renderCategoryChips();
+      updatePreview();
+      $("#txCategoryManager").classList.add("hidden");
+      toast(`${category} seleccionada`);
+      requestAnimationFrame(()=>{
+        document.querySelector(".tx-category-chip.active")?.scrollIntoView({block:"nearest",inline:"nearest",behavior:"smooth"});
+      });
+    };
+
+    list.querySelectorAll("[data-select-category]").forEach(row=>{
+      row.onclick=e=>{
+        if(e.target.closest("button"))return;
+        chooseCategory(row.dataset.selectCategory);
+      };
+      row.onkeydown=e=>{
+        if(e.key==="Enter"||e.key===" "){
+          e.preventDefault();
+          chooseCategory(row.dataset.selectCategory);
+        }
+      };
+    });
+    list.querySelectorAll("[data-use-category]").forEach(btn=>btn.onclick=e=>{
+      e.stopPropagation();
+      chooseCategory(btn.dataset.useCategory);
+    });
+    list.querySelectorAll("[data-rename-category]").forEach(btn=>btn.onclick=e=>{
+      e.stopPropagation();
       const i=+btn.dataset.renameCategory,old=data.categories[i];
       const name=prompt("Nuevo nombre de la categoría:",old)?.trim();
       if(!name||name===old)return;
@@ -619,7 +655,8 @@ function openTransaction(type="expense",id=null){
       if(selectedCategory===old)selectedCategory=name;
       persist();renderCategoryManager();renderCategoryChips();updatePreview();toast("Categoría actualizada");
     });
-    list.querySelectorAll("[data-remove-category]").forEach(btn=>btn.onclick=()=>{
+    list.querySelectorAll("[data-remove-category]").forEach(btn=>btn.onclick=e=>{
+      e.stopPropagation();
       const i=+btn.dataset.removeCategory,c=data.categories[i];
       if(data.transactions.some(x=>x.category===c)||data.budgets.some(x=>x.category===c)||data.recurring.some(x=>x.category===c))return toast("No se puede eliminar porque la categoría está en uso");
       if(confirm(`¿Eliminar la categoría "${c}"?`)){
